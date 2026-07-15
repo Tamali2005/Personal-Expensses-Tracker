@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Pocket Diary — my money notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f7f1e6;
+    --board:#efe4d0;
+    --board-dot:#e2d3b3;
+    --ink:#443725;
+    --muted:#8d7c63;
+    --paper-line:#e8dcc6;
+
+    --yellow:#ffe9a3;
+    --yellow-edge:#f3d477;
+    --pink:#ffc9d6;
+    --pink-edge:#f3a7ba;
+    --blue:#bfe3ef;
+    --blue-edge:#93c9dc;
+    --green:#c9e8bf;
+    --green-edge:#a3d494;
+    --lavender:#ddc9f0;
+    --lavender-edge:#c2a3e0;
+
+    --accent:#8a63c9;
+    --accent-dark:#6e4aa8;
+    --danger:#d9776b;
+    --white:#fffdf8;
+    --shadow: 0 6px 14px rgba(68,55,37,0.16);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Nunito', sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(var(--board-dot) 1.4px, transparent 1.4px);
+    background-size: 22px 22px;
+    background-color: var(--board);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3, .hand{
+    font-family:'Kalam', cursive;
+  }
+  button{ font-family:'Nunito', sans-serif; cursor:pointer; }
+  input, select{ font-family:'Nunito', sans-serif; }
+
+  /* ---------- layout shell ---------- */
+  .app{
+    max-width:1100px;
+    margin:0 auto;
+    padding:22px 18px 100px;
+  }
+
+  /* ---------- header ---------- */
+  header.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-bottom:22px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand .badge{
+    width:46px;height:46px;
+    background:var(--yellow);
+    border:2px solid var(--yellow-edge);
+    border-radius:50% 50% 46% 54% / 55% 45% 55% 45%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;
+    transform:rotate(-6deg);
+    box-shadow:var(--shadow);
+  }
+  .brand h1{
+    font-size:28px;
+    margin:0;
+    line-height:1;
+  }
+  .brand p{
+    margin:2px 0 0;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .top-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .icon-btn{
+    background:var(--white);
+    border:2px solid var(--paper-line);
+    border-radius:12px;
+    width:40px;height:40px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:17px;
+    box-shadow:var(--shadow);
+    transition: transform .15s ease;
+  }
+  .icon-btn:hover{ transform: translateY(-2px) rotate(-4deg); }
+
+  .greeting-strip{
+    background:var(--white);
+    border:2px dashed var(--paper-line);
+    border-radius:14px;
+    padding:10px 16px;
+    font-size:14px;
+    color:var(--muted);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .greeting-strip b{ color:var(--ink); }
+
+  /* ---------- sticky note base ---------- */
+  .note{
+    position:relative;
+    border-radius:6px;
+    padding:18px 18px 16px;
+    box-shadow:var(--shadow);
+    border:1px solid rgba(68,55,37,0.06);
+  }
+  .note::before{ /* pin */
+    content:"";
+    position:absolute;
+    top:-9px; left:50%;
+    transform:translateX(-50%);
+    width:16px;height:16px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #fff, var(--accent) 55%, var(--accent-dark) 100%);
+    box-shadow: 0 3px 4px rgba(0,0,0,0.25);
+  }
+  .note h3{
+    margin:2px 0 6px;
+    font-size:16px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .note .big{
+    font-family:'Nunito',sans-serif;
+    font-weight:800;
+    font-size:26px;
+    letter-spacing:-0.5px;
+  }
+  .note .sub{
+    font-size:12.5px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+
+  /* ---------- stats grid ---------- */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px 16px;
+    margin:26px 0 8px;
+  }
+  .stats .note:nth-child(1){ background:var(--yellow); border-color:var(--yellow-edge); transform:rotate(-2deg); }
+  .stats .note:nth-child(2){ background:var(--green); border-color:var(--green-edge); transform:rotate(1.5deg); }
+  .stats .note:nth-child(3){ background:var(--pink); border-color:var(--pink-edge); transform:rotate(-1deg); }
+  .stats .note:nth-child(4){ background:var(--blue); border-color:var(--blue-edge); transform:rotate(2deg); }
+  .stats .note:hover{ transform:rotate(0deg) translateY(-3px) scale(1.02); z-index:2; }
+  .stats .note{ transition:transform .18s ease; }
+
+
+
+  /* ---------- savings jar ---------- */
+  .jar-card{
+    background:var(--white);
+    border:2px solid var(--paper-line);
+    border-radius:16px;
+    padding:18px 20px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    margin:24px 0;
+    box-shadow:var(--shadow);
+    flex-wrap:wrap;
+  }
+  .jar-card svg{ flex-shrink:0; }
+  .jar-text{ flex:1; min-width:200px; }
+  .jar-text h3{ margin:0 0 6px; font-size:19px; }
+  .jar-text p{ margin:0; color:var(--muted); font-size:13.5px; }
+  .jar-bar-track{
+    background:#efe6d8; border-radius:20px; height:12px; margin-top:10px; overflow:hidden;
+    border:1px solid var(--paper-line);
+  }
+  .jar-bar-fill{
+    height:100%; background:linear-gradient(90deg,var(--blue-edge),var(--accent));
+    border-radius:20px; transition:width .5s ease;
+  }
+  .jar-edit-btn{
+    background:var(--lavender); border:2px solid var(--lavender-edge);
+    border-radius:10px; padding:8px 14px; font-weight:700; font-size:13px;
+    color:var(--ink); box-shadow:var(--shadow);
+  }
+
+  /* ---------- section titles ---------- */
+  .section-title{
+    display:flex; align-items:center; gap:10px;
+    margin:34px 0 14px;
+  }
+  .section-title h2{ font-size:22px; margin:0; }
+  .section-title .tape{
+    width:60px; height:18px;
+    background:repeating-linear-gradient(45deg, var(--lavender), var(--lavender) 6px, var(--lavender-edge) 6px, var(--lavender-edge) 12px);
+    opacity:.8; border-radius:2px; transform:rotate(-3deg);
+  }
+
+  /* ---------- charts ---------- */
+  .charts{
+    display:grid;
+    grid-template-columns:1.1fr 1.4fr;
+    gap:18px;
+  }
+
+  .chart-card{
+    background:var(--white);
+    border:2px solid var(--paper-line);
+    border-radius:16px;
+    padding:18px;
+    box-shadow:var(--shadow);
+    background-image: repeating-linear-gradient(to bottom, transparent, transparent 27px, var(--paper-line) 28px);
+  }
+  .chart-card h3{ margin:0 0 12px; font-size:16px; }
+  .chart-empty{
+    color:var(--muted); font-size:13.5px; text-align:center; padding:30px 10px;
+  }
+
+  /* ---------- transactions ---------- */
+  .tx-list{
+    background:var(--white);
+    border:2px solid var(--paper-line);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .tx-row{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 16px;
+    border-bottom:1px dashed var(--paper-line);
+  }
+  .tx-row:last-child{ border-bottom:none; }
+  .tx-icon{
+    width:36px;height:36px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px; flex-shrink:0;
+  }
+  .tx-icon.income{ background:var(--green); }
+  .tx-icon.expense{ background:var(--pink); }
+  .tx-icon.saving{ background:var(--blue); }
+  .tx-main{ flex:1; min-width:0; }
+  .tx-main .cat{ font-weight:700; font-size:14.5px; }
+  .tx-main .note-txt{ font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tx-amt{ font-weight:800; font-size:15px; white-space:nowrap; }
+  .tx-amt.income{ color:#3f8f4a; }
+  .tx-amt.expense{ color:var(--danger); }
+  .tx-amt.saving{ color:#3778a3; }
+  .tx-date{ font-size:11.5px; color:var(--muted); width:56px; text-align:right; flex-shrink:0; }
+  .tx-del{
+    background:none;border:none;color:var(--muted); font-size:15px; opacity:.5;
+    transition:opacity .15s;
+  }
+  .tx-del:hover{ opacity:1; color:var(--danger); }
+  .empty-state{
+    text-align:center; padding:40px 20px; color:var(--muted); font-size:14px;
+  }
+  .empty-state .hand{ font-size:20px; color:var(--ink); display:block; margin-bottom:6px; }
+
+  /* ---------- FAB ---------- */
+  .fab{
+    position:fixed; right:26px; bottom:26px;
+    background:var(--accent); color:#fff;
+    border:none; border-radius:50%;
+    width:60px; height:60px;
+    font-size:28px; font-weight:700;
+    box-shadow:0 8px 18px rgba(110,74,168,0.45);
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .18s ease;
+    z-index:40;
+  }
+  .fab:hover{ transform:scale(1.08) rotate(6deg); }
+
+  /* ---------- modal / overlay ---------- */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(68,55,37,0.45);
+    display:flex; align-items:center; justify-content:center;
+    z-index:100;
+    padding:16px;
+  }
+  .hidden{ display:none !important; }
+
+  .modal{
+    background:var(--white);
+    border-radius:18px;
+    padding:26px 24px 22px;
+    width:100%; max-width:420px;
+    max-height:88vh; overflow-y:auto;
+    box-shadow:0 20px 40px rgba(0,0,0,0.25);
+    position:relative;
+    animation: popin .22s ease;
+  }
+  @keyframes popin{ from{ transform:scale(.9); opacity:0;} to{ transform:scale(1); opacity:1;} }
+  .modal h2{ margin:0 0 4px; font-size:22px; }
+  .modal p.desc{ margin:0 0 16px; color:var(--muted); font-size:13.5px; }
+  .modal .close-x{
+    position:absolute; top:14px; right:14px;
+    background:none; border:none; font-size:20px; color:var(--muted);
+  }
+
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12.5px; font-weight:700; margin-bottom:5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; }
+  .field input[type=text], .field input[type=number], .field input[type=date], .field select{
+    width:100%; padding:10px 12px; border-radius:10px;
+    border:2px solid var(--paper-line); background:var(--bg); font-size:14.5px; color:var(--ink);
+  }
+  .field input:focus, .field select:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+
+  .type-toggle{ display:flex; gap:8px; }
+  .type-toggle button{
+    flex:1; padding:9px 6px; border-radius:10px;
+    border:2px solid var(--paper-line); background:var(--bg);
+    font-weight:700; font-size:13px; color:var(--muted);
+  }
+  .type-toggle button.active[data-type="expense"]{ background:var(--pink); border-color:var(--pink-edge); color:var(--ink);}
+  .type-toggle button.active[data-type="income"]{ background:var(--green); border-color:var(--green-edge); color:var(--ink);}
+  .type-toggle button.active[data-type="saving"]{ background:var(--blue); border-color:var(--blue-edge); color:var(--ink);}
+
+  .cat-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+  .cat-chip{
+    padding:7px 12px; border-radius:20px; border:2px solid var(--paper-line);
+    background:var(--bg); font-size:13px; font-weight:600; color:var(--muted);
+  }
+  .cat-chip.active{ background:var(--lavender); border-color:var(--lavender-edge); color:var(--ink); }
+
+  .primary-btn{
+    width:100%; padding:12px; border:none; border-radius:12px;
+    background:var(--accent); color:#fff; font-weight:800; font-size:15px;
+    box-shadow:var(--shadow); margin-top:6px;
+    transition:transform .15s;
+  }
+  .primary-btn:hover{ transform:translateY(-2px); }
+
+  .currency-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:6px;
+  }
+  .currency-grid button{
+    padding:10px 4px; border-radius:10px; border:2px solid var(--paper-line);
+    background:var(--bg); font-weight:700; font-size:13px; color:var(--muted);
+  }
+  .currency-grid button.active{ background:var(--yellow); border-color:var(--yellow-edge); color:var(--ink); }
+
+  footer.credit{
+    text-align:center; color:var(--muted); font-size:12px; margin-top:50px;
+  }
+
+  /* ============================================================
+     RESPONSIVE — laptop / tablet / mobile
+     Breakpoints: >1024 laptop+desktop (default styles above)
+                  769–1024 tablet landscape
+                  481–768  tablet portrait / large phone
+                  ≤480     phone
+  ============================================================ */
+
+  /* ---- Tablet (landscape) & small laptops ---- */
+  @media (max-width:1024px){
+    .app{ max-width:100%; padding:20px 16px 96px; }
+    .stats{ grid-template-columns:repeat(4,1fr); gap:16px 12px; }
+    .charts{ grid-template-columns:1fr; }
+  }
+
+  /* ---- Tablet (portrait) ---- */
+  @media (max-width:768px){
+    .brand h1{ font-size:24px; }
+    .brand .badge{ width:40px; height:40px; font-size:19px; }
+    .stats{ grid-template-columns:repeat(2,1fr); gap:14px 10px; }
+    .note .big{ font-size:22px; }
+    .jar-card{ padding:16px; gap:14px; }
+    .jar-card svg{ width:58px; height:75px; }
+    .section-title h2{ font-size:19px; }
+    .chart-card{ padding:14px; }
+    .tx-date{ width:46px; font-size:11px; }
+    .modal{ padding:22px 18px 18px; }
+    .currency-grid{ grid-template-columns:repeat(3,1fr); }
+  }
+
+  /* ---- Large phones ---- */
+  @media (max-width:600px){
+    header.top{ flex-direction:row; align-items:center; }
+    .greeting-strip{ flex-direction:column; align-items:flex-start; gap:4px; font-size:13px; }
+    .stats{ grid-template-columns:repeat(2,1fr); gap:12px 10px; }
+    .jar-card{ flex-direction:column; align-items:flex-start; text-align:left; }
+    .jar-edit-btn{ align-self:flex-start; }
+    .charts{ gap:14px; }
+    .tx-row{ padding:10px 12px; gap:8px; }
+    .tx-main .cat{ font-size:13.5px; }
+    .fab{ width:54px; height:54px; font-size:25px; right:18px; bottom:18px; }
+  }
+
+  /* ---- Phones ---- */
+  @media (max-width:480px){
+    .app{ padding:16px 12px 90px; }
+    .brand p{ display:none; }
+    .brand h1{ font-size:21px; }
+    .icon-btn{ width:36px; height:36px; font-size:15px; }
+    .stats{ grid-template-columns:1fr 1fr; gap:10px; }
+    .stats .note{ padding:14px 14px 12px; }
+    .note h3{ font-size:14px; }
+    .note .big{ font-size:19px; }
+    .note .sub{ font-size:11px; }
+    .jar-card svg{ width:50px; height:64px; }
+    .jar-text h3{ font-size:17px; }
+    .jar-text p{ font-size:12.5px; }
+    .section-title h2{ font-size:17px; }
+    .section-title .tape{ width:44px; }
+    .chart-card h3{ font-size:14px; }
+    .tx-icon{ width:32px; height:32px; font-size:14px; }
+    .tx-date{ width:38px; }
+    .tx-del{ font-size:13px; }
+    .modal{ max-width:100%; border-radius:16px; padding:20px 16px 16px; }
+    .modal h2{ font-size:19px; }
+    .currency-grid{ grid-template-columns:repeat(3,1fr); }
+    .currency-grid button{ font-size:12px; padding:9px 4px; }
+    .type-toggle{ flex-wrap:wrap; }
+    .type-toggle button{ flex:1 1 30%; font-size:12px; padding:8px 4px; }
+    .cat-chip{ font-size:12px; padding:6px 10px; }
+  }
+
+  /* ---- Very small phones ---- */
+  @media (max-width:360px){
+    .stats{ grid-template-columns:1fr; }
+    .tx-date{ display:none; }
+  }
+
+  /* ---- Respect reduced motion ---- */
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============= ONBOARDING ============= -->
+<div id="onboarding" class="overlay hidden">
+  <div class="modal">
+    <h2 class="hand">Hi there! 👋</h2>
+    <p class="desc">Let's set up your money notebook before we start pinning things.</p>
+
+    <div class="field">
+      <label>What should we call you?</label>
+      <input type="text" id="ob-name" placeholder="e.g. Riya" maxlength="24">
+    </div>
+
+    <div class="field">
+      <label>Pick your currency</label>
+      <div class="currency-grid" id="ob-currency-grid"></div>
+    </div>
+
+    <div class="field">
+      <label>Monthly savings goal (optional)</label>
+      <input type="number" id="ob-goal" placeholder="e.g. 5000" min="0">
+    </div>
+
+    <button class="primary-btn" id="ob-start">Start my notebook →</button>
+  </div>
+</div>
+
+<!-- ============= ADD / EDIT TRANSACTION MODAL ============= -->
+<div id="tx-modal" class="overlay hidden">
+  <div class="modal">
+    <button class="close-x" id="tx-close">✕</button>
+    <h2 class="hand" id="tx-modal-title">New sticky note</h2>
+    <p class="desc">Jot down what happened with your money.</p>
+
+    <div class="field">
+      <label>Type</label>
+      <div class="type-toggle" id="tx-type-toggle">
+        <button type="button" data-type="expense" class="active">💸 Expense</button>
+        <button type="button" data-type="income">💰 Income</button>
+        <button type="button" data-type="saving">🐷 Saving</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Amount</label>
+      <input type="number" id="tx-amount" placeholder="0" min="0" step="0.01">
+    </div>
+
+    <div class="field">
+      <label>Category</label>
+      <div class="cat-grid" id="tx-cat-grid"></div>
+    </div>
+
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="tx-date">
+    </div>
+
+    <div class="field">
+      <label>Note (optional)</label>
+      <input type="text" id="tx-note" placeholder="e.g. Sunday groceries" maxlength="60">
+    </div>
+
+    <button class="primary-btn" id="tx-save">Pin it to the board</button>
+  </div>
+</div>
+
+<!-- ============= SETTINGS MODAL ============= -->
+<div id="settings-modal" class="overlay hidden">
+  <div class="modal">
+    <button class="close-x" id="settings-close">✕</button>
+    <h2 class="hand">Settings</h2>
+    <p class="desc">Tweak your notebook.</p>
+
+    <div class="field">
+      <label>Your name</label>
+      <input type="text" id="set-name" maxlength="24">
+    </div>
+
+    <div class="field">
+      <label>Currency</label>
+      <div class="currency-grid" id="set-currency-grid"></div>
+    </div>
+
+    <div class="field">
+      <label>Monthly savings goal</label>
+      <input type="number" id="set-goal" min="0">
+    </div>
+
+    <button class="primary-btn" id="settings-save">Save changes</button>
+  </div>
+</div>
+
+<!-- ============= APP ============= -->
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <div class="badge">📓</div>
+      <div>
+        <h1>Pocket Diary</h1>
+        <p>your handwritten money notebook</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="open-settings" title="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <div class="greeting-strip">
+    <div>Hey <b id="greet-name">friend</b>, here's where your money's been hanging out. ✨</div>
+    <div id="today-date"></div>
+  </div>
+
+  <section class="stats">
+    <div class="note">
+      <h3>👛 Balance</h3>
+      <div class="big" id="stat-balance">—</div>
+      <div class="sub">what's left in hand</div>
+    </div>
+    <div class="note">
+      <h3>💰 Income</h3>
+      <div class="big" id="stat-income">—</div>
+      <div class="sub">total earned</div>
+    </div>
+    <div class="note">
+      <h3>💸 Expense</h3>
+      <div class="big" id="stat-expense">—</div>
+      <div class="sub">total spent</div>
+    </div>
+    <div class="note">
+      <h3>🐷 Saved</h3>
+      <div class="big" id="stat-saving">—</div>
+      <div class="sub">tucked away</div>
+    </div>
+  </section>
+
+  <div class="jar-card">
+    <svg width="70" height="90" viewBox="0 0 70 90" id="jar-svg">
+      <path d="M20 18 L20 10 Q20 4 26 4 L44 4 Q50 4 50 10 L50 18" fill="none" stroke="#a3d494" stroke-width="4" stroke-linecap="round"/>
+      <rect x="12" y="16" width="46" height="70" rx="10" fill="#eef7ea" stroke="#a3d494" stroke-width="3"/>
+      <clipPath id="jarClip"><rect x="12" y="16" width="46" height="70" rx="10"/></clipPath>
+      <rect id="jar-fill" x="12" y="86" width="46" height="0" fill="#93c9dc" clip-path="url(#jarClip)"/>
+      <rect x="12" y="16" width="46" height="70" rx="10" fill="none" stroke="#8d7c63" stroke-width="1" opacity="0.3"/>
+    </svg>
+    <div class="jar-text">
+      <h3 class="hand">Savings jar 🫙</h3>
+      <p id="jar-caption">Set a monthly goal in Settings to start filling the jar.</p>
+      <div class="jar-bar-track"><div class="jar-bar-fill" id="jar-bar" style="width:0%"></div></div>
+    </div>
+    <button class="jar-edit-btn" id="jar-edit">Edit goal</button>
+  </div>
+
+  <div class="section-title">
+    <div class="tape"></div>
+    <h2 class="hand">This month's story</h2>
+  </div>
+  <div class="charts">
+    <div class="chart-card">
+      <h3>Where it went</h3>
+      <canvas id="catChart" height="220"></canvas>
+      <div class="chart-empty hidden" id="catChart-empty">No expenses yet — add one and I'll draw the picture. 🖍️</div>
+    </div>
+    <div class="chart-card">
+      <h3>Last 7 days</h3>
+      <canvas id="trendChart" height="220"></canvas>
+      <div class="chart-empty hidden" id="trendChart-empty">Nothing logged this week yet.</div>
+    </div>
+  </div>
+
+  <div class="section-title">
+    <div class="tape"></div>
+    <h2 class="hand">Recent notes</h2>
+  </div>
+  <div class="tx-list" id="tx-list"></div>
+
+  <footer class="credit">made with 🖊️ &amp; sticky notes</footer>
+</div>
+
+<button class="fab" id="fab-add" title="Add a note">+</button>
+
+<script>
+/* ============================================================
+   DATA / STORAGE
+============================================================ */
+const CURRENCIES = [
+  {code:'USD', symbol:'$'},
+  {code:'INR', symbol:'₹'},
+  {code:'EUR', symbol:'€'},
+  {code:'GBP', symbol:'£'},
+  {code:'JPY', symbol:'¥'},
+  {code:'AUD', symbol:'A$'},
+  {code:'CAD', symbol:'C$'},
+  {code:'AED', symbol:'د.إ'},
+  {code:'SGD', symbol:'S$'},
+];
+
+const CATEGORIES = {
+  expense: [
+    {key:'food', label:'Food', icon:'🍔'},
+    {key:'transport', label:'Transport', icon:'🚌'},
+    {key:'shopping', label:'Shopping', icon:'🛍️'},
+    {key:'bills', label:'Bills', icon:'🧾'},
+    {key:'health', label:'Health', icon:'💊'},
+    {key:'fun', label:'Fun', icon:'🎬'},
+    {key:'other', label:'Other', icon:'📦'},
+  ],
+  income: [
+    {key:'salary', label:'Salary', icon:'💼'},
+    {key:'freelance', label:'Freelance', icon:'💻'},
+    {key:'gift', label:'Gift', icon:'🎁'},
+    {key:'other', label:'Other', icon:'📦'},
+  ],
+  saving: [
+    {key:'goal', label:'Goal', icon:'🎯'},
+    {key:'emergency', label:'Emergency', icon:'🛟'},
+    {key:'other', label:'Other', icon:'📦'},
+  ],
+};
+
+const CAT_ICON = {}; // flat lookup key -> icon
+Object.values(CATEGORIES).flat().forEach(c => CAT_ICON[c.key] = CAT_ICON[c.key] || c.icon);
+
+let user = JSON.parse(localStorage.getItem('pd_user') || 'null');
+let transactions = JSON.parse(localStorage.getItem('pd_tx') || '[]');
+
+function saveUser(){ localStorage.setItem('pd_user', JSON.stringify(user)); }
+function saveTx(){ localStorage.setItem('pd_tx', JSON.stringify(transactions)); }
+
+function currencySymbol(){
+  const c = CURRENCIES.find(c => c.code === (user?.currency || 'USD'));
+  return c ? c.symbol : '$';
+}
+function fmt(amount){
+  const n = Number(amount)||0;
+  return currencySymbol() + n.toLocaleString(undefined, {maximumFractionDigits:2});
+}
+
+/* ============================================================
+   ONBOARDING
+============================================================ */
+function buildCurrencyGrid(container, selectedCode, onPick){
+  container.innerHTML = '';
+  CURRENCIES.forEach(c => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = `${c.symbol} ${c.code}`;
+    if(c.code === selectedCode) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      [...container.children].forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      onPick(c.code);
+    });
+    container.appendChild(btn);
+  });
+}
+
+let obSelectedCurrency = 'USD';
+function initOnboarding(){
+  const overlay = document.getElementById('onboarding');
+  buildCurrencyGrid(document.getElementById('ob-currency-grid'), obSelectedCurrency, code => obSelectedCurrency = code);
+  overlay.classList.remove('hidden');
+
+  document.getElementById('ob-start').addEventListener('click', () => {
+    const name = document.getElementById('ob-name').value.trim() || 'friend';
+    const goal = parseFloat(document.getElementById('ob-goal').value) || 0;
+    user = { name, currency: obSelectedCurrency, goal };
+    saveUser();
+    overlay.classList.add('hidden');
+    renderAll();
+  });
+}
+
+/* ============================================================
+   ADD / EDIT TRANSACTION MODAL
+============================================================ */
+let currentTxType = 'expense';
+let currentCat = null;
+let editingId = null;
+
+function buildCatGrid(){
+  const grid = document.getElementById('tx-cat-grid');
+  grid.innerHTML = '';
+  CATEGORIES[currentTxType].forEach(c => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'cat-chip';
+    chip.textContent = `${c.icon} ${c.label}`;
+    if(currentCat === c.key) chip.classList.add('active');
+    chip.addEventListener('click', () => {
+      currentCat = c.key;
+      [...grid.children].forEach(ch=>ch.classList.remove('active'));
+      chip.classList.add('active');
+    });
+    grid.appendChild(chip);
+  });
+  if(!CATEGORIES[currentTxType].find(c=>c.key===currentCat)){
+    currentCat = CATEGORIES[currentTxType][0].key;
+  }
+  buildCatGridHighlight();
+}
+function buildCatGridHighlight(){
+  const grid = document.getElementById('tx-cat-grid');
+  [...grid.children].forEach((chip, i) => {
+    if(CATEGORIES[currentTxType][i].key === currentCat) chip.classList.add('active');
+    else chip.classList.remove('active');
+  });
+}
+
+function openTxModal(existing){
+  editingId = existing ? existing.id : null;
+  currentTxType = existing ? existing.type : 'expense';
+  currentCat = existing ? existing.category : null;
+
+  document.getElementById('tx-modal-title').textContent = existing ? 'Edit note' : 'New sticky note';
+  document.getElementById('tx-amount').value = existing ? existing.amount : '';
+  document.getElementById('tx-note').value = existing ? existing.note : '';
+  document.getElementById('tx-date').value = existing ? existing.date : new Date().toISOString().slice(0,10);
+
+  [...document.querySelectorAll('#tx-type-toggle button')].forEach(b => {
+    b.classList.toggle('active', b.dataset.type === currentTxType);
+  });
+  buildCatGrid();
+
+  document.getElementById('tx-modal').classList.remove('hidden');
+}
+function closeTxModal(){ document.getElementById('tx-modal').classList.add('hidden'); }
+
+document.getElementById('tx-type-toggle').addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  currentTxType = btn.dataset.type;
+  [...document.querySelectorAll('#tx-type-toggle button')].forEach(b => b.classList.toggle('active', b === btn));
+  currentCat = null;
+  buildCatGrid();
+});
+
+document.getElementById('tx-save').addEventListener('click', () => {
+  const amount = parseFloat(document.getElementById('tx-amount').value);
+  if(!amount || amount <= 0){
+    document.getElementById('tx-amount').focus();
+    return;
+  }
+  const date = document.getElementById('tx-date').value || new Date().toISOString().slice(0,10);
+  const note = document.getElementById('tx-note').value.trim();
+
+  if(editingId){
+    const t = transactions.find(t => t.id === editingId);
+    Object.assign(t, { type: currentTxType, category: currentCat, amount, date, note });
+  } else {
+    transactions.unshift({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      type: currentTxType, category: currentCat, amount, date, note
+    });
+  }
+  saveTx();
+  closeTxModal();
+  renderAll();
+});
+
+document.getElementById('tx-close').addEventListener('click', closeTxModal);
+document.getElementById('fab-add').addEventListener('click', () => openTxModal(null));
+
+/* ============================================================
+   SETTINGS MODAL
+============================================================ */
+function openSettings(){
+  document.getElementById('set-name').value = user.name;
+  buildCurrencyGrid(document.getElementById('set-currency-grid'), user.currency, code => user.currency = code);
+  document.getElementById('set-goal').value = user.goal || '';
+  document.getElementById('settings-modal').classList.remove('hidden');
+}
+document.getElementById('open-settings').addEventListener('click', openSettings);
+document.getElementById('settings-close').addEventListener('click', () => document.getElementById('settings-modal').classList.add('hidden'));
+document.getElementById('settings-save').addEventListener('click', () => {
+  user.name = document.getElementById('set-name').value.trim() || 'friend';
+  user.goal = parseFloat(document.getElementById('set-goal').value) || 0;
+  saveUser();
+  document.getElementById('settings-modal').classList.add('hidden');
+  renderAll();
+});
+document.getElementById('jar-edit').addEventListener('click', openSettings);
+
+/* ============================================================
+   RENDER
+============================================================ */
+let catChart, trendChart;
+
+function renderAll(){
+  document.getElementById('greet-name').textContent = user.name;
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
+
+  const income = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+  const expense = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+  const saving = transactions.filter(t=>t.type==='saving').reduce((s,t)=>s+Number(t.amount),0);
+  const balance = income - expense - saving;
+
+  document.getElementById('stat-balance').textContent = fmt(balance);
+  document.getElementById('stat-income').textContent = fmt(income);
+  document.getElementById('stat-expense').textContent = fmt(expense);
+  document.getElementById('stat-saving').textContent = fmt(saving);
+
+  // savings jar — current calendar month saving vs goal
+  const now = new Date();
+  const monthSaving = transactions.filter(t => t.type==='saving' && sameMonth(t.date, now)).reduce((s,t)=>s+Number(t.amount),0);
+  const goal = user.goal || 0;
+  const pct = goal > 0 ? Math.min(100, Math.round((monthSaving/goal)*100)) : 0;
+  document.getElementById('jar-bar').style.width = pct + '%';
+  const jarFillEl = document.getElementById('jar-fill');
+  const fillH = goal > 0 ? Math.min(70, (pct/100)*70) : 0;
+  jarFillEl.setAttribute('y', 86 - fillH);
+  jarFillEl.setAttribute('height', fillH);
+  document.getElementById('jar-caption').textContent = goal > 0
+    ? `${fmt(monthSaving)} of ${fmt(goal)} saved this month (${pct}%)`
+    : 'Set a monthly goal in Settings to start filling the jar.';
+
+  renderTxList();
+  renderCharts(expense);
+}
+
+function sameMonth(dateStr, ref){
+  const d = new Date(dateStr);
+  return d.getMonth() === ref.getMonth() && d.getFullYear() === ref.getFullYear();
+}
+
+function renderTxList(){
+  const list = document.getElementById('tx-list');
+  list.innerHTML = '';
+  if(transactions.length === 0){
+    list.innerHTML = `<div class="empty-state"><span class="hand">Your board is empty</span>Tap the + button to pin your first note.</div>`;
+    return;
+  }
+  const sorted = [...transactions].sort((a,b) => new Date(b.date) - new Date(a.date));
+  sorted.slice(0,30).forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'tx-row';
+    const icon = CAT_ICON[t.category] || '📦';
+    const sign = t.type === 'income' ? '+' : '-';
+    const d = new Date(t.date);
+    const dateLabel = d.toLocaleDateString(undefined,{month:'short', day:'numeric'});
+    row.innerHTML = `
+      <div class="tx-icon ${t.type}">${icon}</div>
+      <div class="tx-main">
+        <div class="cat">${capitalize(t.category)}${t.note ? ' · ' : ''}<span class="note-txt" style="font-weight:400;">${escapeHtml(t.note||'')}</span></div>
+      </div>
+      <div class="tx-amt ${t.type}">${sign}${fmt(t.amount)}</div>
+      <div class="tx-date">${dateLabel}</div>
+      <button class="tx-del" title="Delete" data-id="${t.id}">🗑️</button>
+    `;
+    row.querySelector('.tx-main').addEventListener('click', () => openTxModal(t));
+    row.querySelector('.tx-del').addEventListener('click', (e) => {
+      e.stopPropagation();
+      transactions = transactions.filter(x => x.id !== t.id);
+      saveTx();
+      renderAll();
+    });
+    list.appendChild(row);
+  });
+}
+
+function capitalize(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function renderCharts(totalExpense){
+  // category doughnut (expenses only)
+  const byCat = {};
+  transactions.filter(t=>t.type==='expense').forEach(t => {
+    byCat[t.category] = (byCat[t.category]||0) + Number(t.amount);
+  });
+  const catCanvas = document.getElementById('catChart');
+  const catEmpty = document.getElementById('catChart-empty');
+  if(Object.keys(byCat).length === 0){
+    catCanvas.classList.add('hidden'); catEmpty.classList.remove('hidden');
+    if(catChart){ catChart.destroy(); catChart = null; }
+  } else {
+    catCanvas.classList.remove('hidden'); catEmpty.classList.add('hidden');
+    const labels = Object.keys(byCat).map(k => `${CAT_ICON[k]||''} ${capitalize(k)}`);
+    const data = Object.values(byCat);
+    const palette = ['#f3a7ba','#93c9dc','#a3d494','#f3d477','#c2a3e0','#e88b7d','#8d7c63'];
+    if(catChart) catChart.destroy();
+    catChart = new Chart(catCanvas, {
+      type:'doughnut',
+      data:{ labels, datasets:[{ data, backgroundColor: palette, borderColor:'#fffdf8', borderWidth:3 }] },
+      options:{
+        plugins:{ legend:{ position:'bottom', labels:{ font:{family:'Nunito', size:11}, color:'#443725', boxWidth:12, padding:10 } } },
+        cutout:'62%'
+      }
+    });
+  }
+
+  // last 7 days trend
+  const days = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    days.push(d);
+  }
+  const incomeData = days.map(d => sumForDay(d, 'income'));
+  const expenseData = days.map(d => sumForDay(d, 'expense'));
+  const hasData = incomeData.some(v=>v>0) || expenseData.some(v=>v>0);
+
+  const trendCanvas = document.getElementById('trendChart');
+  const trendEmpty = document.getElementById('trendChart-empty');
+  if(!hasData){
+    trendCanvas.classList.add('hidden'); trendEmpty.classList.remove('hidden');
+    if(trendChart){ trendChart.destroy(); trendChart = null; }
+  } else {
+    trendCanvas.classList.remove('hidden'); trendEmpty.classList.add('hidden');
+    const labels = days.map(d => d.toLocaleDateString(undefined,{weekday:'short'}));
+    if(trendChart) trendChart.destroy();
+    trendChart = new Chart(trendCanvas, {
+      type:'bar',
+      data:{
+        labels,
+        datasets:[
+          { label:'Income', data: incomeData, backgroundColor:'#a3d494', borderRadius:6, maxBarThickness:22 },
+          { label:'Expense', data: expenseData, backgroundColor:'#f3a7ba', borderRadius:6, maxBarThickness:22 },
+        ]
+      },
+      options:{
+        plugins:{ legend:{ position:'bottom', labels:{ font:{family:'Nunito', size:11}, color:'#443725', boxWidth:12, padding:10 } } },
+        scales:{
+          x:{ grid:{ display:false }, ticks:{ font:{family:'Nunito', size:11}, color:'#8d7c63' } },
+          y:{ grid:{ color:'#e8dcc6' }, ticks:{ font:{family:'Nunito', size:10}, color:'#8d7c63' } }
+        }
+      }
+    });
+  }
+}
+function sumForDay(date, type){
+  const key = date.toISOString().slice(0,10);
+  return transactions.filter(t => t.type===type && t.date===key).reduce((s,t)=>s+Number(t.amount),0);
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+function init(){
+  if(!user){
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('fab-add').style.display = 'none';
+    initOnboarding();
+  } else {
+    renderAll();
+  }
+}
+init();
+</script>
+</body>
+</html>
