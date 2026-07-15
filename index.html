@@ -333,6 +333,15 @@
   }
   .primary-btn:hover{ transform:translateY(-2px); }
 
+  .logout-btn{
+    width:100%; padding:11px; margin-top:10px;
+    border:2px dashed var(--pink-edge); border-radius:12px;
+    background:transparent; color:var(--danger);
+    font-weight:700; font-size:13.5px;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .logout-btn:hover{ background:rgba(217,119,107,0.08); transform:translateY(-1px); }
+
   .currency-grid{
     display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:6px;
   }
@@ -560,6 +569,8 @@
     </div>
 
     <button class="primary-btn" id="settings-save">Save changes</button>
+
+    <button class="logout-btn" id="settings-logout">🚪 Log out</button>
   </div>
 </div>
 
@@ -745,19 +756,22 @@ function buildCurrencyGrid(container, selectedCode, onPick){
 let obSelectedCurrency = 'USD';
 function initOnboarding(){
   const overlay = document.getElementById('onboarding');
+  document.getElementById('ob-name').value = '';
+  document.getElementById('ob-goal').value = '';
+  obSelectedCurrency = 'USD';
   buildCurrencyGrid(document.getElementById('ob-currency-grid'), obSelectedCurrency, code => obSelectedCurrency = code);
   overlay.classList.remove('hidden');
-
-  document.getElementById('ob-start').addEventListener('click', () => {
-    const name = document.getElementById('ob-name').value.trim() || 'friend';
-    const goal = parseFloat(document.getElementById('ob-goal').value) || 0;
-    user = { name, currency: obSelectedCurrency, goal };
-    saveUser();
-    overlay.classList.add('hidden');
-    document.getElementById('app').style.display = ''; // was hidden while onboarding was showing
-    renderAll();
-  });
 }
+
+document.getElementById('ob-start').addEventListener('click', () => {
+  const name = document.getElementById('ob-name').value.trim() || 'friend';
+  const goal = parseFloat(document.getElementById('ob-goal').value) || 0;
+  user = { name, currency: obSelectedCurrency, goal };
+  saveUser();
+  document.getElementById('onboarding').classList.add('hidden');
+  document.getElementById('app').style.display = ''; // was hidden while onboarding was showing
+  renderAll();
+});
 
 /* ============================================================
    ADD / EDIT TRANSACTION MODAL
@@ -871,6 +885,23 @@ document.getElementById('settings-save').addEventListener('click', () => {
   renderAll();
 });
 document.getElementById('jar-edit').addEventListener('click', openSettings);
+
+document.getElementById('settings-logout').addEventListener('click', () => {
+  const ok = confirm("Log out and clear this notebook from this device? This can't be undone.");
+  if(!ok) return;
+
+  localStorage.removeItem('pd_user');
+  localStorage.removeItem('pd_tx');
+  user = null;
+  transactions = [];
+
+  if(catChart){ catChart.destroy(); catChart = null; }
+  if(trendChart){ trendChart.destroy(); trendChart = null; }
+
+  document.getElementById('settings-modal').classList.add('hidden');
+  document.getElementById('app').style.display = 'none';
+  initOnboarding();
+});
 
 /* ============================================================
    RENDER
