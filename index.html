@@ -754,6 +754,7 @@ function initOnboarding(){
     user = { name, currency: obSelectedCurrency, goal };
     saveUser();
     overlay.classList.add('hidden');
+    document.getElementById('app').style.display = ''; // was hidden while onboarding was showing
     renderAll();
   });
 }
