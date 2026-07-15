@@ -173,6 +173,9 @@
   .stats .note:nth-child(4){ background:var(--blue); border-color:var(--blue-edge); transform:rotate(2deg); }
   .stats .note:hover{ transform:rotate(0deg) translateY(-3px) scale(1.02); z-index:2; }
   .stats .note{ transition:transform .18s ease; }
+  .note-clickable{ cursor:pointer; }
+  .note-clickable:active{ transform:scale(0.97) !important; }
+  .note-clickable .sub{ text-decoration: underline dotted; text-underline-offset:3px; }
 
 
 
@@ -279,20 +282,6 @@
   }
   .empty-state .hand{ font-size:20px; color:var(--ink); display:block; margin-bottom:6px; }
 
-  /* ---------- FAB ---------- */
-  .fab{
-    position:fixed; right:26px; bottom:26px;
-    background:var(--accent); color:#fff;
-    border:none; border-radius:50%;
-    width:60px; height:60px;
-    font-size:28px; font-weight:700;
-    box-shadow:0 8px 18px rgba(110,74,168,0.45);
-    display:flex; align-items:center; justify-content:center;
-    transition:transform .18s ease;
-    z-index:40;
-  }
-  .fab:hover{ transform:scale(1.08) rotate(6deg); }
-
   /* ---------- modal / overlay ---------- */
   .overlay{
     position:fixed; inset:0;
@@ -328,16 +317,6 @@
     border:2px solid var(--paper-line); background:var(--bg); font-size:14.5px; color:var(--ink);
   }
   .field input:focus, .field select:focus{ outline:2px solid var(--accent); outline-offset:1px; }
-
-  .type-toggle{ display:flex; gap:8px; }
-  .type-toggle button{
-    flex:1; padding:9px 6px; border-radius:10px;
-    border:2px solid var(--paper-line); background:var(--bg);
-    font-weight:700; font-size:13px; color:var(--muted);
-  }
-  .type-toggle button.active[data-type="expense"]{ background:var(--pink); border-color:var(--pink-edge); color:var(--ink);}
-  .type-toggle button.active[data-type="income"]{ background:var(--green); border-color:var(--green-edge); color:var(--ink);}
-  .type-toggle button.active[data-type="saving"]{ background:var(--blue); border-color:var(--blue-edge); color:var(--ink);}
 
   .cat-grid{ display:flex; flex-wrap:wrap; gap:8px; }
   .cat-chip{
@@ -407,7 +386,6 @@
     .charts{ gap:14px; }
     .tx-row{ padding:10px 12px; gap:8px; }
     .tx-main .cat{ font-size:13.5px; }
-    .fab{ width:54px; height:54px; font-size:25px; right:18px; bottom:18px; }
   }
 
   /* ---- Phones ---- */
@@ -434,8 +412,6 @@
     .modal h2{ font-size:19px; }
     .currency-grid{ grid-template-columns:repeat(3,1fr); }
     .currency-grid button{ font-size:12px; padding:9px 4px; }
-    .type-toggle{ flex-wrap:wrap; }
-    .type-toggle button{ flex:1 1 30%; font-size:12px; padding:8px 4px; }
     .cat-chip{ font-size:12px; padding:6px 10px; }
   }
 
@@ -443,6 +419,58 @@
   @media (max-width:360px){
     .stats{ grid-template-columns:1fr; }
     .tx-date{ display:none; }
+  }
+
+  /* ---- goal-reached sprinkle celebration ---- */
+  .confetti-layer{
+    position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:300;
+  }
+  .confetti-piece{
+    position:absolute;
+    animation-name:sprinkleBurst;
+    animation-timing-function:ease-out;
+    animation-fill-mode:forwards;
+    will-change:transform,opacity;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15));
+  }
+  @keyframes sprinkleBurst{
+    0%{ transform:translate(0,0) rotate(0deg) scale(0.6); opacity:0; }
+    12%{ opacity:1; }
+    70%{ opacity:1; }
+    100%{ transform:translate(var(--dx), calc(var(--dy) + 60px)) rotate(var(--rot)) scale(1); opacity:0; }
+  }
+
+  .celebrate-toast{
+    position:fixed;
+    top:22px; left:50%;
+    transform:translateX(-50%) translateY(-16px) rotate(-2deg);
+    background:var(--yellow);
+    border:2px solid var(--yellow-edge);
+    color:var(--ink);
+    font-family:'Kalam', cursive;
+    font-weight:700;
+    font-size:16px;
+    line-height:1.3;
+    padding:12px 22px;
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    opacity:0;
+    z-index:310;
+    text-align:center;
+    max-width:88vw;
+    pointer-events:none;
+    transition: opacity .3s ease, transform .3s ease;
+  }
+  .celebrate-toast.show{ opacity:1; transform:translateX(-50%) translateY(0) rotate(-2deg); }
+  .celebrate-toast.big{
+    background:var(--lavender);
+    border-color:var(--lavender-edge);
+    font-size:19px;
+    padding:14px 26px;
+  }
+  @media (max-width:480px){
+    .celebrate-toast{ font-size:14px; padding:10px 16px; top:14px; }
+    .celebrate-toast.big{ font-size:16px; padding:12px 18px; }
   }
 
   /* ---- Respect reduced motion ---- */
@@ -483,16 +511,7 @@
   <div class="modal">
     <button class="close-x" id="tx-close">✕</button>
     <h2 class="hand" id="tx-modal-title">New sticky note</h2>
-    <p class="desc">Jot down what happened with your money.</p>
-
-    <div class="field">
-      <label>Type</label>
-      <div class="type-toggle" id="tx-type-toggle">
-        <button type="button" data-type="expense" class="active">💸 Expense</button>
-        <button type="button" data-type="income">💰 Income</button>
-        <button type="button" data-type="saving">🐷 Saving</button>
-      </div>
-    </div>
+    <p class="desc" id="tx-modal-desc">Jot down what happened with your money.</p>
 
     <div class="field">
       <label>Amount</label>
@@ -570,20 +589,20 @@
       <div class="big" id="stat-balance">—</div>
       <div class="sub">what's left in hand</div>
     </div>
-    <div class="note">
+    <div class="note note-clickable" data-type="income" title="Tap to add income">
       <h3>💰 Income</h3>
       <div class="big" id="stat-income">—</div>
-      <div class="sub">total earned</div>
+      <div class="sub">total earned · tap to add</div>
     </div>
-    <div class="note">
+    <div class="note note-clickable" data-type="expense" title="Tap to add expense">
       <h3>💸 Expense</h3>
       <div class="big" id="stat-expense">—</div>
-      <div class="sub">total spent</div>
+      <div class="sub">total spent · tap to add</div>
     </div>
-    <div class="note">
+    <div class="note note-clickable" data-type="saving" title="Tap to add saving">
       <h3>🐷 Saved</h3>
       <div class="big" id="stat-saving">—</div>
-      <div class="sub">tucked away</div>
+      <div class="sub">tucked away · tap to add</div>
     </div>
   </section>
 
@@ -629,7 +648,7 @@
   <footer class="credit">made with 🖊️ &amp; sticky notes</footer>
 </div>
 
-<button class="fab" id="fab-add" title="Add a note">+</button>
+
 
 <script>
 /* ============================================================
@@ -678,6 +697,22 @@ let transactions = JSON.parse(localStorage.getItem('pd_tx') || '[]');
 
 function saveUser(){ localStorage.setItem('pd_user', JSON.stringify(user)); }
 function saveTx(){ localStorage.setItem('pd_tx', JSON.stringify(transactions)); }
+
+// Format a Date as YYYY-MM-DD using LOCAL calendar fields (not UTC), so "today"
+// always matches the real date in the user's own timezone. toISOString() shifts
+// to UTC, which drifts a day off for timezones ahead of UTC (e.g. IST, UTC+5:30).
+function toLocalISODate(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+// Parse a stored "YYYY-MM-DD" string back into a local Date (avoids the UTC-midnight
+// parsing that plain `new Date("YYYY-MM-DD")` does, which can shift the day in some timezones).
+function parseLocalDate(dateStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
 
 function currencySymbol(){
   const c = CURRENCIES.find(c => c.code === (user?.currency || 'USD'));
@@ -759,33 +794,29 @@ function buildCatGridHighlight(){
   });
 }
 
-function openTxModal(existing){
+const TYPE_META = {
+  expense: { label:'Expense', emoji:'💸', desc:"Jot down what you spent." },
+  income:  { label:'Income',  emoji:'💰', desc:"Log some money coming in." },
+  saving:  { label:'Saving',  emoji:'🐷', desc:"Tuck a little away." },
+};
+
+function openTxModal(existing, forcedType){
   editingId = existing ? existing.id : null;
-  currentTxType = existing ? existing.type : 'expense';
+  currentTxType = existing ? existing.type : (forcedType || 'expense');
   currentCat = existing ? existing.category : null;
 
-  document.getElementById('tx-modal-title').textContent = existing ? 'Edit note' : 'New sticky note';
+  const meta = TYPE_META[currentTxType];
+  document.getElementById('tx-modal-title').textContent = `${meta.emoji} ${existing ? 'Edit' : 'Add'} ${meta.label}`;
+  document.getElementById('tx-modal-desc').textContent = meta.desc;
   document.getElementById('tx-amount').value = existing ? existing.amount : '';
   document.getElementById('tx-note').value = existing ? existing.note : '';
-  document.getElementById('tx-date').value = existing ? existing.date : new Date().toISOString().slice(0,10);
+  document.getElementById('tx-date').value = existing ? existing.date : toLocalISODate(new Date());
 
-  [...document.querySelectorAll('#tx-type-toggle button')].forEach(b => {
-    b.classList.toggle('active', b.dataset.type === currentTxType);
-  });
   buildCatGrid();
 
   document.getElementById('tx-modal').classList.remove('hidden');
 }
 function closeTxModal(){ document.getElementById('tx-modal').classList.add('hidden'); }
-
-document.getElementById('tx-type-toggle').addEventListener('click', e => {
-  const btn = e.target.closest('button');
-  if(!btn) return;
-  currentTxType = btn.dataset.type;
-  [...document.querySelectorAll('#tx-type-toggle button')].forEach(b => b.classList.toggle('active', b === btn));
-  currentCat = null;
-  buildCatGrid();
-});
 
 document.getElementById('tx-save').addEventListener('click', () => {
   const amount = parseFloat(document.getElementById('tx-amount').value);
@@ -793,7 +824,7 @@ document.getElementById('tx-save').addEventListener('click', () => {
     document.getElementById('tx-amount').focus();
     return;
   }
-  const date = document.getElementById('tx-date').value || new Date().toISOString().slice(0,10);
+  const date = document.getElementById('tx-date').value || toLocalISODate(new Date());
   const note = document.getElementById('tx-note').value.trim();
 
   if(editingId){
@@ -811,7 +842,14 @@ document.getElementById('tx-save').addEventListener('click', () => {
 });
 
 document.getElementById('tx-close').addEventListener('click', closeTxModal);
-document.getElementById('fab-add').addEventListener('click', () => openTxModal(null));
+
+// Income / Expense / Saved sticky notes — open the add-note modal pre-set to that type.
+// Bound to "click" only (never hover), per note-clickable elements in .stats.
+document.querySelectorAll('.stats .note-clickable').forEach(noteEl => {
+  noteEl.addEventListener('click', () => {
+    openTxModal(null, noteEl.dataset.type);
+  });
+});
 
 /* ============================================================
    SETTINGS MODAL
@@ -866,29 +904,114 @@ function renderAll(){
     ? `${fmt(monthSaving)} of ${fmt(goal)} saved this month (${pct}%)`
     : 'Set a monthly goal in Settings to start filling the jar.';
 
+  // celebrate with a sprinkle burst every time this month's savings cross another ₹100 milestone,
+  // and a bigger one the moment the full goal is reached.
+  const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+  const MILESTONE_STEP = 100;
+  if(!user.milestones) user.milestones = {};
+  if(!user.goalCompleted) user.goalCompleted = {};
+
+  const milestoneReached = goal > 0 ? Math.floor(monthSaving / MILESTONE_STEP) * MILESTONE_STEP : 0;
+  const prevMilestone = user.milestones[monthKey] || 0;
+  const goalJustCompleted = goal > 0 && monthSaving >= goal && !user.goalCompleted[monthKey];
+
+  if(goalJustCompleted){
+    user.goalCompleted[monthKey] = true;
+    user.milestones[monthKey] = Math.max(prevMilestone, milestoneReached);
+    saveUser();
+    celebrate(`🏆 Congratulations! You hit your ${fmt(goal)} goal!`, true);
+  } else if(milestoneReached > 0 && milestoneReached > prevMilestone){
+    user.milestones[monthKey] = milestoneReached;
+    saveUser();
+    celebrate(`🎉 Congratulations! You saved ${fmt(milestoneReached)} in your goal!`, false);
+  }
+
   renderTxList();
   renderCharts(expense);
 }
 
 function sameMonth(dateStr, ref){
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   return d.getMonth() === ref.getMonth() && d.getFullYear() === ref.getFullYear();
+}
+
+/* ---------- goal-reached celebration: sprinkles burst in from both sides ---------- */
+function celebrate(message, big){
+  const layer = document.createElement('div');
+  layer.className = 'confetti-layer';
+  document.body.appendChild(layer);
+
+  const bits = big
+    ? ['🏆','🎉','✨','🎊','💫','⭐','🥳','💛','💙','💜']
+    : ['🎉','✨','🎊','💫','⭐','💛','💙','💜'];
+  const count = big ? 36 : 26; // per side
+
+  ['left','right'].forEach(side => {
+    for(let i=0;i<count;i++){
+      const piece = document.createElement('span');
+      piece.className = 'confetti-piece';
+      piece.textContent = bits[Math.floor(Math.random()*bits.length)];
+
+      const topPct = Math.random()*90 + 5;           // 5%–95% viewport height
+      const travel = (big ? 160 : 120) + Math.random()*260;  // px travelled inward
+      const drift = (Math.random()*160 - 80);         // vertical drift px
+      const rot = (Math.random()*720 - 360) + 'deg';
+      const dur = (0.9 + Math.random()*0.9) + 's';
+      const size = (big ? 16 : 14) + Math.random()*14 + 'px';
+      const delay = (Math.random()*0.25) + 's';
+
+      piece.style.top = topPct + '%';
+      piece.style.fontSize = size;
+      piece.style.animationDuration = dur;
+      piece.style.animationDelay = delay;
+      piece.style.setProperty('--rot', rot);
+      piece.style.setProperty('--dy', drift + 'px');
+
+      if(side === 'left'){
+        piece.style.left = '-24px';
+        piece.style.setProperty('--dx', travel + 'px');
+      } else {
+        piece.style.right = '-24px';
+        piece.style.setProperty('--dx', (-travel) + 'px');
+      }
+      layer.appendChild(piece);
+    }
+  });
+
+  setTimeout(() => layer.remove(), big ? 3200 : 2400);
+
+  if(message) showCelebrationToast(message, big);
+}
+
+function showCelebrationToast(message, big){
+  const toast = document.createElement('div');
+  toast.className = 'celebrate-toast' + (big ? ' big' : '');
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('show'));
+
+  const stay = big ? 3600 : 2600;
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 350);
+  }, stay);
 }
 
 function renderTxList(){
   const list = document.getElementById('tx-list');
   list.innerHTML = '';
   if(transactions.length === 0){
-    list.innerHTML = `<div class="empty-state"><span class="hand">Your board is empty</span>Tap the + button to pin your first note.</div>`;
+    list.innerHTML = `<div class="empty-state"><span class="hand">Your board is empty</span>Tap the Income, Expense or Saved note above to pin your first entry.</div>`;
     return;
   }
-  const sorted = [...transactions].sort((a,b) => new Date(b.date) - new Date(a.date));
+  const sorted = [...transactions].sort((a,b) => parseLocalDate(b.date) - parseLocalDate(a.date));
   sorted.slice(0,30).forEach(t => {
     const row = document.createElement('div');
     row.className = 'tx-row';
     const icon = CAT_ICON[t.category] || '📦';
     const sign = t.type === 'income' ? '+' : '-';
-    const d = new Date(t.date);
+    const d = parseLocalDate(t.date);
     const dateLabel = d.toLocaleDateString(undefined,{month:'short', day:'numeric'});
     row.innerHTML = `
       <div class="tx-icon ${t.type}">${icon}</div>
@@ -979,7 +1102,7 @@ function renderCharts(totalExpense){
   }
 }
 function sumForDay(date, type){
-  const key = date.toISOString().slice(0,10);
+  const key = toLocalISODate(date);
   return transactions.filter(t => t.type===type && t.date===key).reduce((s,t)=>s+Number(t.amount),0);
 }
 
@@ -989,7 +1112,6 @@ function sumForDay(date, type){
 function init(){
   if(!user){
     document.getElementById('app').style.display = 'none';
-    document.getElementById('fab-add').style.display = 'none';
     initOnboarding();
   } else {
     renderAll();
