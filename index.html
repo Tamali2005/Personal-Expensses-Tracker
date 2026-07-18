@@ -9,29 +9,29 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root{
-    --bg:#f7f1e6;
-    --board:#efe4d0;
-    --board-dot:#e2d3b3;
-    --ink:#443725;
-    --muted:#8d7c63;
-    --paper-line:#e8dcc6;
+    --bg:#f8efdd;
+    --board:#f0e2c4;
+    --board-dot:#e0cd9e;
+    --ink:#3d2f1c;
+    --muted:#8a7457;
+    --paper-line:#e6d6ae;
 
-    --yellow:#ffe9a3;
-    --yellow-edge:#f3d477;
-    --pink:#ffc9d6;
-    --pink-edge:#f3a7ba;
-    --blue:#bfe3ef;
-    --blue-edge:#93c9dc;
-    --green:#c9e8bf;
-    --green-edge:#a3d494;
-    --lavender:#ddc9f0;
-    --lavender-edge:#c2a3e0;
+    --yellow:#ffdc6b;
+    --yellow-edge:#f4bc2c;
+    --pink:#ff9fbd;
+    --pink-edge:#f2668f;
+    --blue:#7fdcf0;
+    --blue-edge:#3cbedb;
+    --green:#a3e893;
+    --green-edge:#5fce56;
+    --lavender:#cda6f0;
+    --lavender-edge:#a568e0;
 
-    --accent:#8a63c9;
-    --accent-dark:#6e4aa8;
-    --danger:#d9776b;
+    --accent:#8b4fdb;
+    --accent-dark:#6d31bd;
+    --danger:#f0553f;
     --white:#fffdf8;
-    --shadow: 0 6px 14px rgba(68,55,37,0.16);
+    --shadow: 0 6px 14px rgba(68,55,37,0.18);
   }
 
   *{box-sizing:border-box;}
@@ -210,6 +210,200 @@
     color:var(--ink); box-shadow:var(--shadow);
   }
 
+  /* ---------- paired widget row: jar + achievements ---------- */
+  .pair-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:16px;
+    align-items:stretch;
+    margin:20px 0;
+  }
+  .pair-row > *{ width:100%; min-width:0; }
+  .widget-label{
+    font-family:'Kalam', cursive; font-weight:700; font-size:15px;
+    margin-bottom:8px; text-align:center;
+  }
+  .jar-card.compact{
+    flex-direction:column; text-align:center; gap:8px;
+    padding:18px 16px; margin:0; height:100%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .jar-card.compact svg{ width:52px; height:67px; }
+  .jar-card.compact .jar-text{ min-width:0; width:100%; }
+  .jar-card.compact .jar-text h3{ font-size:16.5px; margin-bottom:4px; }
+  .jar-card.compact .jar-text p{ font-size:12px; }
+  .jar-card.compact .jar-edit-btn{ padding:7px 14px; font-size:12px; margin-top:6px; }
+
+  .ach-card.compact{ height:100%; display:flex; flex-direction:column; justify-content:center; padding:16px; }
+  .ach-card.compact .ach-grid{ grid-template-columns:repeat(2, 1fr); gap:10px; }
+  .ach-card.compact .ach-item{ padding:10px 6px; }
+  .ach-card.compact .ach-item .medal{ font-size:21px; margin-bottom:4px; }
+  .ach-card.compact .ach-item .ach-name{ font-size:10px; }
+  .ach-card.compact .ach-item .ach-progress{ font-size:8.5px; }
+  .ach-card.compact .ach-header{ margin-bottom:10px; }
+
+  /* ---------- sticky notes board (freeform personal notes, pinboard style) ---------- */
+  .board-card{
+    background:var(--board);
+    border:2px solid var(--paper-line);
+    border-radius:20px;
+    padding:20px;
+    box-shadow:var(--shadow);
+    background-image: radial-gradient(var(--board-dot) 1.4px, transparent 1.4px);
+    background-size:20px 20px;
+  }
+  .board-toolbar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    flex-wrap:wrap; margin-bottom:16px;
+  }
+  .board-hint{ font-size:13px; color:var(--muted); margin:0; }
+  .board-add-btn{
+    background:var(--accent); color:#fff; border:none; border-radius:12px;
+    padding:10px 18px; font-weight:800; font-size:13.5px; box-shadow:var(--shadow);
+    transition:transform .15s ease; flex-shrink:0;
+  }
+  .board-add-btn:hover{ transform:translateY(-2px) scale(1.03); }
+  .board-grid{
+    display:flex; flex-wrap:wrap; gap:22px 26px;
+  }
+  .board-empty{ text-align:center; color:var(--muted); font-size:13.5px; padding:14px 10px 4px; }
+
+  .sticky-note{
+    position:relative;
+    width:160px; min-height:150px;
+    padding:22px 12px 12px;
+    border-radius:4px;
+    box-shadow:0 6px 12px rgba(0,0,0,0.18);
+    transform: rotate(var(--rot, 0deg));
+    transition: transform .18s ease, box-shadow .18s ease;
+    animation: stickyPop .4s cubic-bezier(.34,1.56,.64,1);
+  }
+  .sticky-note::before{ /* pin */
+    content:"";
+    position:absolute; top:-9px; left:50%;
+    transform:translateX(-50%);
+    width:16px; height:16px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #fff, var(--accent) 55%, var(--accent-dark) 100%);
+    box-shadow:0 3px 4px rgba(0,0,0,0.25);
+  }
+  .sticky-note:hover{
+    transform: translateY(-5px) rotate(0deg) scale(1.05);
+    box-shadow:0 12px 22px rgba(0,0,0,0.28);
+    z-index:5;
+  }
+  .sticky-note.removing{
+    transform: translateY(-5px) rotate(var(--rot,0deg)) scale(0.4) !important;
+    opacity:0;
+  }
+  @keyframes stickyPop{
+    0%{ transform: rotate(var(--rot,0deg)) scale(0.3); opacity:0; }
+    65%{ transform: rotate(var(--rot,0deg)) scale(1.1); opacity:1; }
+    100%{ transform: rotate(var(--rot,0deg)) scale(1); opacity:1; }
+  }
+  .sticky-note textarea{
+    width:100%; height:112px; resize:none; border:none; background:transparent;
+    font-family:'Kalam', cursive; font-size:14px; line-height:1.4; color:var(--ink);
+    outline:none;
+  }
+  .sticky-note textarea::placeholder{ color:rgba(68,55,37,0.45); }
+  .sticky-del{
+    position:absolute; top:4px; right:6px;
+    background:none; border:none; font-size:13px; color:var(--ink);
+    opacity:0; transition:opacity .15s ease; cursor:pointer; line-height:1;
+  }
+  .sticky-note:hover .sticky-del{ opacity:.55; }
+  .sticky-del:hover{ opacity:1 !important; color:var(--danger); }
+
+  /* ---------- savings challenge box (black + gold, number grid — matches reference photo) ---------- */
+  .challenge-wrap{ text-align:center; margin: 22px 0 8px; }
+  .challenge-box{
+    max-width:440px; margin:0 auto;
+    background:#15130f;
+    border-radius:16px;
+    padding:16px;
+    box-shadow: 0 9px 0 #060503, var(--shadow);
+  }
+  .challenge-handle{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:2px 0 14px;
+  }
+  .challenge-knob{
+    width:16px; height:16px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #fdeeb0, #d8a83a 55%, #8a6a1c 100%);
+    box-shadow:0 2px 3px rgba(0,0,0,.5);
+  }
+  .challenge-slot{ width:64px; height:9px; border-radius:5px; background:linear-gradient(#e8c060, #a67f22); }
+  .challenge-frame{
+    border:3px solid #d8a83a; border-radius:8px; padding:10px;
+    background:#100e0b;
+    box-shadow: inset 0 0 0 1px #4a3a17;
+  }
+  .challenge-grid{
+    display:grid; grid-template-columns:repeat(8,1fr); gap:4px;
+    margin-bottom:12px;
+  }
+  .challenge-cell{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border:1px solid #4f3e1c; border-radius:4px;
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:11px;
+    color:#f0cf7a; background:#1c1712; cursor:pointer; padding:0;
+    transition: background .12s ease, transform .12s ease;
+  }
+  .challenge-cell:hover:not(.crossed){ background:#2b2117; transform:translateY(-1px); }
+  .challenge-cell.crossed{
+    color:#5f4e2c; text-decoration:line-through; background:#0a0908;
+    cursor:default; opacity:.55;
+  }
+  .challenge-footer{ border-top:2px solid #d8a83a; padding-top:10px; }
+  .challenge-total{ font-family:'Kalam', cursive; font-weight:700; font-size:25px; color:#f0cf7a; }
+  .challenge-caption{ font-size:11.5px; color:#c8a856; letter-spacing:.3px; margin-top:2px; font-weight:700; }
+  .challenge-progress{ margin-top:10px; font-size:13px; color:var(--muted); font-weight:700; }
+
+  /* wide variant: full-width standalone box (no longer paired with a calendar) */
+  .challenge-box.wide{ max-width:640px; padding:22px; }
+  .challenge-box.wide .challenge-grid{ grid-template-columns:repeat(10,1fr); gap:6px; }
+  .challenge-box.wide .challenge-cell{ font-size:13px; border-radius:5px; }
+  .challenge-box.wide .challenge-total{ font-size:30px; }
+  .challenge-box.wide .challenge-caption{ font-size:13px; }
+  .challenge-box.wide .challenge-frame{ padding:14px; }
+  .challenge-box.wide .challenge-knob{ width:18px; height:18px; }
+  .challenge-box.wide .challenge-slot{ width:76px; height:10px; }
+
+  .challenge-reset{
+    margin-top:14px;
+    background:var(--lavender); border:2px solid var(--lavender-edge);
+    color:var(--ink); font-weight:800; font-size:13.5px;
+    padding:10px 20px; border-radius:14px; cursor:pointer;
+    box-shadow:var(--shadow);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .challenge-reset:hover{ transform:translateY(-2px) scale(1.03); box-shadow:0 8px 16px rgba(68,55,37,0.22); }
+  .challenge-reset:active{ transform:translateY(0) scale(0.98); }
+
+  /* ---------- achievements card ---------- */
+  .ach-card{
+    background:var(--pink); border:2px solid var(--pink-edge);
+    border-radius:20px; padding:20px; box-shadow:var(--shadow);
+  }
+  .ach-header{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .ach-badge{
+    width:34px; height:34px; background:#fff; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    box-shadow:var(--shadow); flex-shrink:0;
+  }
+  .ach-title{ font-family:'Kalam', cursive; font-weight:700; font-size:19px; }
+  .ach-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  .ach-item{
+    background:rgba(255,255,255,0.55); border-radius:14px; padding:14px 8px;
+    text-align:center; transition:transform .15s ease;
+  }
+  .ach-item.unlocked{ background:#fff; box-shadow:0 4px 10px rgba(0,0,0,0.1); animation: achPop .4s ease; }
+  @keyframes achPop{ 0%{ transform:scale(.85); } 60%{ transform:scale(1.06); } 100%{ transform:scale(1); } }
+  .ach-item .medal{ font-size:26px; display:block; margin-bottom:6px; filter:grayscale(1); opacity:.4; }
+  .ach-item.unlocked .medal{ filter:none; opacity:1; }
+  .ach-item .ach-name{ font-size:11px; font-weight:800; color:var(--ink); line-height:1.25; display:block; }
+  .ach-item .ach-progress{ font-size:9.5px; color:var(--muted); margin-top:3px; display:block; }
+
   /* ---------- section titles ---------- */
   .section-title{
     display:flex; align-items:center; gap:10px;
@@ -222,24 +416,37 @@
     opacity:.8; border-radius:2px; transform:rotate(-3deg);
   }
 
+  /* ---------- analytics period toggle ---------- */
+  .analytics-toggle{
+    display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .analytics-toggle button{
+    flex:1; min-width:68px; padding:8px 8px; border-radius:10px;
+    border:2px solid var(--paper-line); background:var(--white);
+    font-weight:700; font-size:12.5px; color:var(--muted);
+  }
+  .analytics-toggle button.active{
+    background:var(--lavender); border-color:var(--lavender-edge); color:var(--ink);
+  }
+
   /* ---------- charts ---------- */
   .charts{
     display:grid;
     grid-template-columns:1.1fr 1.4fr;
-    gap:18px;
+    gap:14px;
   }
 
   .chart-card{
     background:var(--white);
     border:2px solid var(--paper-line);
-    border-radius:16px;
-    padding:18px;
+    border-radius:14px;
+    padding:14px;
     box-shadow:var(--shadow);
     background-image: repeating-linear-gradient(to bottom, transparent, transparent 27px, var(--paper-line) 28px);
   }
-  .chart-card h3{ margin:0 0 12px; font-size:16px; }
+  .chart-card h3{ margin:0 0 8px; font-size:14px; }
   .chart-empty{
-    color:var(--muted); font-size:13.5px; text-align:center; padding:30px 10px;
+    color:var(--muted); font-size:13.5px; text-align:center; padding:24px 10px;
   }
 
   /* ---------- transactions ---------- */
@@ -383,6 +590,11 @@
     .tx-date{ width:46px; font-size:11px; }
     .modal{ padding:22px 18px 18px; }
     .currency-grid{ grid-template-columns:repeat(3,1fr); }
+    .ach-grid{ grid-template-columns:repeat(4,1fr); gap:10px; }
+    .ach-card{ padding:16px; }
+    .pair-row{ gap:12px; }
+    .challenge-box.wide{ max-width:100%; }
+    .challenge-box.wide .challenge-grid{ grid-template-columns:repeat(8,1fr); }
   }
 
   /* ---- Large phones ---- */
@@ -395,6 +607,10 @@
     .charts{ gap:14px; }
     .tx-row{ padding:10px 12px; gap:8px; }
     .tx-main .cat{ font-size:13.5px; }
+    .challenge-grid{ grid-template-columns:repeat(8,1fr); }
+    .challenge-cell{ font-size:10.5px; }
+    .pair-row{ grid-template-columns:1fr; }
+    .jar-card.compact, .ach-card.compact{ height:auto; }
   }
 
   /* ---- Phones ---- */
@@ -422,6 +638,18 @@
     .currency-grid{ grid-template-columns:repeat(3,1fr); }
     .currency-grid button{ font-size:12px; padding:9px 4px; }
     .cat-chip{ font-size:12px; padding:6px 10px; }
+    .challenge-box.wide{ padding:14px; }
+    .challenge-box.wide .challenge-grid{ grid-template-columns:repeat(6,1fr); gap:4px; }
+    .challenge-box.wide .challenge-cell{ font-size:11px; }
+    .challenge-box.wide .challenge-total{ font-size:22px; }
+    .board-card{ padding:14px; }
+    .board-grid{ gap:16px; justify-content:center; }
+    .sticky-note{ width:130px; min-height:130px; }
+    .sticky-note textarea{ height:92px; font-size:13px; }
+    .board-add-btn{ padding:8px 14px; font-size:12.5px; }
+    .ach-card{ padding:14px; border-radius:16px; }
+    .ach-grid{ grid-template-columns:repeat(2,1fr); gap:10px; }
+    .ach-item .medal{ font-size:22px; }
   }
 
   /* ---- Very small phones ---- */
@@ -617,36 +845,92 @@
     </div>
   </section>
 
-  <div class="jar-card">
-    <svg width="70" height="90" viewBox="0 0 70 90" id="jar-svg">
-      <path d="M20 18 L20 10 Q20 4 26 4 L44 4 Q50 4 50 10 L50 18" fill="none" stroke="#a3d494" stroke-width="4" stroke-linecap="round"/>
-      <rect x="12" y="16" width="46" height="70" rx="10" fill="#eef7ea" stroke="#a3d494" stroke-width="3"/>
-      <clipPath id="jarClip"><rect x="12" y="16" width="46" height="70" rx="10"/></clipPath>
-      <rect id="jar-fill" x="12" y="86" width="46" height="0" fill="#93c9dc" clip-path="url(#jarClip)"/>
-      <rect x="12" y="16" width="46" height="70" rx="10" fill="none" stroke="#8d7c63" stroke-width="1" opacity="0.3"/>
-    </svg>
-    <div class="jar-text">
-      <h3 class="hand">Savings jar 🫙</h3>
-      <p id="jar-caption">Set a monthly goal in Settings to start filling the jar.</p>
-      <div class="jar-bar-track"><div class="jar-bar-fill" id="jar-bar" style="width:0%"></div></div>
+  <div class="section-title">
+    <div class="tape"></div>
+    <h2 class="hand">Save &amp; track</h2>
+  </div>
+
+  <div class="pair-row">
+    <div class="jar-card compact">
+      <svg width="70" height="90" viewBox="0 0 70 90" id="jar-svg">
+        <path d="M20 18 L20 10 Q20 4 26 4 L44 4 Q50 4 50 10 L50 18" fill="none" stroke="#5fce56" stroke-width="4" stroke-linecap="round"/>
+        <rect x="12" y="16" width="46" height="70" rx="10" fill="#eef7ea" stroke="#5fce56" stroke-width="3"/>
+        <clipPath id="jarClip"><rect x="12" y="16" width="46" height="70" rx="10"/></clipPath>
+        <rect id="jar-fill" x="12" y="86" width="46" height="0" fill="#3cbedb" clip-path="url(#jarClip)"/>
+        <rect x="12" y="16" width="46" height="70" rx="10" fill="none" stroke="#8a7457" stroke-width="1" opacity="0.3"/>
+      </svg>
+      <div class="jar-text">
+        <h3 class="hand">Savings jar 🫙</h3>
+        <p id="jar-caption">Set a goal in Settings.</p>
+        <div class="jar-bar-track"><div class="jar-bar-fill" id="jar-bar" style="width:0%"></div></div>
+      </div>
+      <button class="jar-edit-btn" id="jar-edit">Edit goal</button>
     </div>
-    <button class="jar-edit-btn" id="jar-edit">Edit goal</button>
+
+    <div class="ach-card compact">
+      <div class="ach-header">
+        <div class="ach-badge">🏅</div>
+        <div class="ach-title">Achievements</div>
+      </div>
+      <div class="ach-grid" id="ach-grid"></div>
+    </div>
+  </div>
+
+  <div class="section-title">
+    <div class="tape"></div>
+    <h2 class="hand">Savings Challenge</h2>
+  </div>
+  <div class="challenge-wrap">
+    <div class="challenge-box wide">
+      <div class="challenge-handle">
+        <span class="challenge-slot"></span>
+        <span class="challenge-knob"></span>
+      </div>
+      <div class="challenge-frame">
+        <div class="challenge-grid" id="challenge-grid"></div>
+        <div class="challenge-footer">
+          <div class="challenge-total" id="challenge-total">₹0/-</div>
+          <div class="challenge-caption">Small Amounts Become Big Savings</div>
+        </div>
+      </div>
+    </div>
+    <div class="challenge-progress" id="challenge-progress">₹0 of ₹0 saved</div>
+    <button class="challenge-reset" id="challenge-reset" type="button">🔄 New challenge</button>
+  </div>
+
+  <div class="section-title">
+    <div class="tape"></div>
+    <h2 class="hand">Sticky Notes</h2>
+  </div>
+  <div class="board-card">
+    <div class="board-toolbar">
+      <p class="board-hint">Jot down anything — reminders, ideas, quick thoughts.</p>
+      <button class="board-add-btn" id="board-add-btn" type="button">📌 New note</button>
+    </div>
+    <div class="board-grid" id="board-grid"></div>
+    <div class="board-empty hidden" id="board-empty">Your board is empty — tap "New note" to pin your first one.</div>
   </div>
 
   <div class="section-title">
     <div class="tape"></div>
     <h2 class="hand">This month's story</h2>
   </div>
+  <div class="analytics-toggle" id="analytics-toggle">
+    <button type="button" data-period="daily" class="active">Daily</button>
+    <button type="button" data-period="weekly">Weekly</button>
+    <button type="button" data-period="monthly">Monthly</button>
+    <button type="button" data-period="yearly">Yearly</button>
+  </div>
   <div class="charts">
     <div class="chart-card">
       <h3>Where it went</h3>
-      <canvas id="catChart" height="220"></canvas>
+      <canvas id="catChart" height="170"></canvas>
       <div class="chart-empty hidden" id="catChart-empty">No expenses yet — add one and I'll draw the picture. 🖍️</div>
     </div>
     <div class="chart-card">
-      <h3>Last 7 days</h3>
-      <canvas id="trendChart" height="220"></canvas>
-      <div class="chart-empty hidden" id="trendChart-empty">Nothing logged this week yet.</div>
+      <h3 id="trendChart-title">Last 7 days</h3>
+      <canvas id="trendChart" height="170"></canvas>
+      <div class="chart-empty hidden" id="trendChart-empty">Nothing logged in this period yet.</div>
     </div>
   </div>
 
@@ -892,14 +1176,17 @@ document.getElementById('settings-logout').addEventListener('click', () => {
 
   localStorage.removeItem('pd_user');
   localStorage.removeItem('pd_tx');
+  localStorage.removeItem('pd_notes');
   user = null;
   transactions = [];
+  stickyNotes = [];
 
   if(catChart){ catChart.destroy(); catChart = null; }
   if(trendChart){ trendChart.destroy(); trendChart = null; }
 
   document.getElementById('settings-modal').classList.add('hidden');
   document.getElementById('app').style.display = 'none';
+  renderBoard();
   initOnboarding();
 });
 
@@ -936,8 +1223,10 @@ function renderAll(){
     ? `${fmt(monthSaving)} of ${fmt(goal)} saved this month (${pct}%)`
     : 'Set a monthly goal in Settings to start filling the jar.';
 
-  // celebrate with a sprinkle burst every time this month's savings cross another ₹100 milestone,
-  // and a bigger one the moment the full goal is reached.
+  // celebrate with a sprinkle burst for EVERY ₹100 milestone this month's savings cross —
+  // even if a single big transaction jumps past several at once (100, 200, 300 ... all fire,
+  // none skipped). Keeps going forever past the goal too, no break. A special bigger burst
+  // fires the moment the full goal itself is reached.
   const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
   const MILESTONE_STEP = 100;
   if(!user.milestones) user.milestones = {};
@@ -947,19 +1236,45 @@ function renderAll(){
   const prevMilestone = user.milestones[monthKey] || 0;
   const goalJustCompleted = goal > 0 && monthSaving >= goal && !user.goalCompleted[monthKey];
 
-  if(goalJustCompleted){
+  if(goal > 0 && milestoneReached > prevMilestone){
+    // walk every missed ₹100 mark in order: prevMilestone+100, +200, +300 ... milestoneReached
+    const missed = [];
+    for(let m = prevMilestone + MILESTONE_STEP; m <= milestoneReached; m += MILESTONE_STEP){
+      missed.push(m);
+    }
+    // safety cap: for a huge one-time jump, only chain the last few marks so the screen
+    // doesn't queue dozens of toasts back to back — everyone still gets celebrated eventually
+    // via later renders, this just avoids a spam burst on one big entry.
+    const MAX_CHAIN = 8;
+    const toPlay = missed.length > MAX_CHAIN ? missed.slice(-MAX_CHAIN) : missed;
+
+    user.milestones[monthKey] = milestoneReached;
+    if(goalJustCompleted) user.goalCompleted[monthKey] = true;
+    saveUser();
+
+    toPlay.forEach((m, i) => {
+      setTimeout(() => {
+        celebrate(`🎉 Congratulations! You saved ${fmt(m)} in your goal!`, false);
+      }, i * 900);
+    });
+
+    // the full-goal banner plays right after all the ₹100 bursts, never instead of them
+    if(goalJustCompleted){
+      setTimeout(() => {
+        celebrate(`🏆 Congratulations! You hit your ${fmt(goal)} goal!`, true);
+      }, toPlay.length * 900);
+    }
+  } else if(goalJustCompleted){
+    // goal reached without a fresh ₹100 mark this update (e.g. goal isn't a multiple of 100)
     user.goalCompleted[monthKey] = true;
-    user.milestones[monthKey] = Math.max(prevMilestone, milestoneReached);
     saveUser();
     celebrate(`🏆 Congratulations! You hit your ${fmt(goal)} goal!`, true);
-  } else if(milestoneReached > 0 && milestoneReached > prevMilestone){
-    user.milestones[monthKey] = milestoneReached;
-    saveUser();
-    celebrate(`🎉 Congratulations! You saved ${fmt(milestoneReached)} in your goal!`, false);
   }
 
   renderTxList();
-  renderCharts(expense);
+  renderCharts();
+  renderAchievements();
+  renderChallenge();
 }
 
 function sameMonth(dateStr, ref){
@@ -968,14 +1283,14 @@ function sameMonth(dateStr, ref){
 }
 
 /* ---------- goal-reached celebration: sprinkles burst in from both sides ---------- */
-function celebrate(message, big){
+function celebrate(message, big, customBits){
   const layer = document.createElement('div');
   layer.className = 'confetti-layer';
   document.body.appendChild(layer);
 
-  const bits = big
+  const bits = customBits || (big
     ? ['🏆','🎉','✨','🎊','💫','⭐','🥳','💛','💙','💜']
-    : ['🎉','✨','🎊','💫','⭐','💛','💙','💜'];
+    : ['🎉','✨','🎊','💫','⭐','💛','💙','💜']);
   const count = big ? 36 : 26; // per side
 
   ['left','right'].forEach(side => {
@@ -1030,6 +1345,199 @@ function showCelebrationToast(message, big){
   }, stay);
 }
 
+/* ============================================================
+   ACHIEVEMENTS
+============================================================ */
+function computeCurrentStreak(){
+  // consecutive days up to today that have at least one logged entry
+  const dates = new Set(transactions.map(t => t.date));
+  let streak = 0;
+  const cursor = new Date();
+  while(dates.has(toLocalISODate(cursor))){
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function computeAchievements(){
+  const totalTx = transactions.length;
+  const activeDays = new Set(transactions.map(t => t.date)).size;
+  const streak = computeCurrentStreak();
+  const totalSaved = transactions.filter(t => t.type === 'saving').reduce((s,t)=>s+Number(t.amount),0);
+
+  return [
+    { medal:'🔥', name:'7 Day Streak', unlocked: streak >= 7, progress: `${Math.min(streak,7)}/7 days` },
+    { medal:'🥉', name:'50 Entries Logged', unlocked: totalTx >= 50, progress: `${Math.min(totalTx,50)}/50` },
+    { medal:'📆', name:'30 Days Active', unlocked: activeDays >= 30, progress: `${Math.min(activeDays,30)}/30 days` },
+    { medal:'🏆', name:'₹5,000 Saved', unlocked: totalSaved >= 5000, progress: `${fmt(Math.min(totalSaved,5000))}/${fmt(5000)}` },
+  ];
+}
+
+function renderAchievements(){
+  const grid = document.getElementById('ach-grid');
+  grid.innerHTML = '';
+  computeAchievements().forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'ach-item' + (a.unlocked ? ' unlocked' : '');
+    el.innerHTML = `<span class="medal">${a.medal}</span><span class="ach-name">${a.name}</span><span class="ach-progress">${a.unlocked ? 'Unlocked!' : a.progress}</span>`;
+    grid.appendChild(el);
+  });
+}
+
+/* ============================================================
+   SAVINGS CHALLENGE — black & gold number-grid box (matches reference photo).
+   Tap a number to "save" it: the cell crosses out and that amount is logged
+   as a real saving transaction, so it feeds the stats, jar, and achievements too.
+============================================================ */
+function generateChallengeGrid(target){
+  const denominations = [10,20,50,100,200];
+  const cells = [];
+  let remaining = target;
+  let guard = 0;
+  while(remaining > 0 && guard < 1000){
+    guard++;
+    const pool = denominations.filter(d => d <= remaining);
+    if(pool.length === 0){ cells.push(remaining); remaining = 0; break; }
+    cells.push(pool[Math.floor(Math.random()*pool.length)]);
+    remaining -= cells[cells.length-1];
+  }
+  return cells;
+}
+
+function ensureChallenge(){
+  const target = (user.goal && user.goal > 0) ? user.goal : 5000;
+  if(!user.challenge || user.challenge.target !== target){
+    const cells = generateChallengeGrid(target);
+    user.challenge = { target, cells, crossed: cells.map(() => false) };
+    saveUser();
+  }
+}
+
+function renderChallenge(){
+  ensureChallenge();
+  const grid = document.getElementById('challenge-grid');
+  grid.innerHTML = '';
+
+  user.challenge.cells.forEach((amt, i) => {
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    const isCrossed = user.challenge.crossed[i];
+    cell.className = 'challenge-cell' + (isCrossed ? ' crossed' : '');
+    cell.textContent = amt;
+    cell.disabled = isCrossed;
+    cell.addEventListener('click', () => crossChallengeCell(i));
+    grid.appendChild(cell);
+  });
+
+  const crossedSum = user.challenge.cells.reduce((s,amt,i) => s + (user.challenge.crossed[i] ? amt : 0), 0);
+  document.getElementById('challenge-total').textContent = fmt(user.challenge.target) + '/-';
+  document.getElementById('challenge-progress').textContent = `${fmt(crossedSum)} of ${fmt(user.challenge.target)} saved`;
+}
+
+function crossChallengeCell(i){
+  if(user.challenge.crossed[i]) return;
+  user.challenge.crossed[i] = true;
+  saveUser();
+
+  transactions.unshift({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    type: 'saving', category: 'goal',
+    amount: user.challenge.cells[i],
+    date: toLocalISODate(new Date()),
+    note: 'Savings challenge'
+  });
+  saveTx();
+  renderAll();
+}
+
+document.getElementById('challenge-reset').addEventListener('click', () => {
+  const ok = confirm("Start a brand new savings challenge? This resets the crossed-off numbers on the box (your saved transactions stay in your history).");
+  if(!ok) return;
+  const target = (user.goal && user.goal > 0) ? user.goal : 5000;
+  const cells = generateChallengeGrid(target);
+  user.challenge = { target, cells, crossed: cells.map(() => false) };
+  saveUser();
+  renderChallenge();
+  celebrate(
+    `🏅 Achievement unlocked: New Challenge Started!`,
+    true,
+    ['🎉','🎊','🧨','🎇','🎆','✨','🥳','🎈']
+  );
+});
+
+/* ============================================================
+   STICKY NOTES BOARD — freeform personal notes, pinboard style
+============================================================ */
+const STICKY_COLORS = ['yellow','pink','blue','green','lavender'];
+let stickyNotes = JSON.parse(localStorage.getItem('pd_notes') || '[]');
+function saveNotes(){ localStorage.setItem('pd_notes', JSON.stringify(stickyNotes)); }
+
+function renderBoard(){
+  const grid = document.getElementById('board-grid');
+  const empty = document.getElementById('board-empty');
+  grid.innerHTML = '';
+
+  if(stickyNotes.length === 0){
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  stickyNotes.forEach(note => {
+    const el = document.createElement('div');
+    el.className = 'sticky-note';
+    el.style.setProperty('--rot', note.rot + 'deg');
+    el.style.background = `var(--${note.color})`;
+    el.style.border = `1px solid var(--${note.color}-edge)`;
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'sticky-del';
+    del.textContent = '✕';
+    del.title = 'Remove note';
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      el.classList.add('removing');
+      setTimeout(() => {
+        stickyNotes = stickyNotes.filter(n => n.id !== note.id);
+        saveNotes();
+        renderBoard();
+      }, 200);
+    });
+
+    const ta = document.createElement('textarea');
+    ta.value = note.text || '';
+    ta.placeholder = 'Write something…';
+    ta.maxLength = 300;
+    ta.addEventListener('input', () => {
+      note.text = ta.value;
+      saveNotes();
+    });
+
+    el.appendChild(del);
+    el.appendChild(ta);
+    grid.appendChild(el);
+  });
+}
+
+document.getElementById('board-add-btn').addEventListener('click', () => {
+  const note = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    text: '',
+    color: STICKY_COLORS[Math.floor(Math.random()*STICKY_COLORS.length)],
+    rot: Math.round((Math.random()*10 - 5) * 10) / 10, // -5deg to +5deg, playful but readable
+  };
+  stickyNotes.push(note);
+  saveNotes();
+  renderBoard();
+  requestAnimationFrame(() => {
+    const areas = document.querySelectorAll('.sticky-note textarea');
+    const last = areas[areas.length - 1];
+    if(last) last.focus();
+  });
+});
+
 function renderTxList(){
   const list = document.getElementById('tx-list');
   list.innerHTML = '';
@@ -1068,12 +1576,73 @@ function renderTxList(){
 function capitalize(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 
-function renderCharts(totalExpense){
-  // category doughnut (expenses only)
+let analyticsPeriod = 'daily'; // 'daily' | 'weekly' | 'monthly' | 'yearly'
+
+const PERIOD_TITLES = {
+  daily:   'Last 7 days',
+  weekly:  'Last 8 weeks',
+  monthly: 'Last 12 months',
+  yearly:  'Last 5 years',
+};
+
+// Builds the buckets (with label + date range) that the trend chart aggregates into,
+// and defines how far back the category-breakdown chart should look for this period.
+function buildPeriodBuckets(period){
+  const buckets = [];
+  const today = new Date();
+
+  if(period === 'daily'){
+    for(let i=6;i>=0;i--){
+      const d = new Date(); d.setDate(today.getDate()-i);
+      buckets.push({ label: d.toLocaleDateString(undefined,{weekday:'short'}), start:d, end:d });
+    }
+  } else if(period === 'weekly'){
+    for(let i=7;i>=0;i--){
+      const end = new Date(); end.setDate(today.getDate() - i*7);
+      const start = new Date(end); start.setDate(end.getDate()-6);
+      buckets.push({ label: start.toLocaleDateString(undefined,{month:'short', day:'numeric'}), start, end });
+    }
+  } else if(period === 'monthly'){
+    for(let i=11;i>=0;i--){
+      const d = new Date(today.getFullYear(), today.getMonth()-i, 1);
+      const start = new Date(d.getFullYear(), d.getMonth(), 1);
+      const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+      buckets.push({ label: d.toLocaleDateString(undefined,{month:'short'}), start, end });
+    }
+  } else if(period === 'yearly'){
+    for(let i=4;i>=0;i--){
+      const y = today.getFullYear() - i;
+      buckets.push({ label:String(y), start:new Date(y,0,1), end:new Date(y,11,31) });
+    }
+  }
+  return buckets;
+}
+
+function sumInRange(type, start, end){
+  return transactions
+    .filter(t => t.type === type && withinRange(t.date, start, end))
+    .reduce((s,t) => s + Number(t.amount), 0);
+}
+function withinRange(dateStr, start, end){
+  const d = parseLocalDate(dateStr);
+  const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const e = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  return d >= s && d <= e;
+}
+
+function renderCharts(){
+  const buckets = buildPeriodBuckets(analyticsPeriod);
+  const rangeStart = buckets[0].start;
+  const rangeEnd = buckets[buckets.length-1].end;
+
+  document.getElementById('trendChart-title').textContent = PERIOD_TITLES[analyticsPeriod];
+
+  // category doughnut — expenses within the selected period
   const byCat = {};
-  transactions.filter(t=>t.type==='expense').forEach(t => {
-    byCat[t.category] = (byCat[t.category]||0) + Number(t.amount);
-  });
+  transactions
+    .filter(t => t.type === 'expense' && withinRange(t.date, rangeStart, rangeEnd))
+    .forEach(t => { byCat[t.category] = (byCat[t.category]||0) + Number(t.amount); });
+
   const catCanvas = document.getElementById('catChart');
   const catEmpty = document.getElementById('catChart-empty');
   if(Object.keys(byCat).length === 0){
@@ -1083,7 +1652,7 @@ function renderCharts(totalExpense){
     catCanvas.classList.remove('hidden'); catEmpty.classList.add('hidden');
     const labels = Object.keys(byCat).map(k => `${CAT_ICON[k]||''} ${capitalize(k)}`);
     const data = Object.values(byCat);
-    const palette = ['#f3a7ba','#93c9dc','#a3d494','#f3d477','#c2a3e0','#e88b7d','#8d7c63'];
+    const palette = ['#f2668f','#3cbedb','#5fce56','#f4bc2c','#a568e0','#f0553f','#8a7457'];
     if(catChart) catChart.destroy();
     catChart = new Chart(catCanvas, {
       type:'doughnut',
@@ -1095,14 +1664,9 @@ function renderCharts(totalExpense){
     });
   }
 
-  // last 7 days trend
-  const days = [];
-  for(let i=6;i>=0;i--){
-    const d = new Date(); d.setDate(d.getDate()-i);
-    days.push(d);
-  }
-  const incomeData = days.map(d => sumForDay(d, 'income'));
-  const expenseData = days.map(d => sumForDay(d, 'expense'));
+  // trend bars — income vs expense per bucket for the selected period
+  const incomeData = buckets.map(b => sumInRange('income', b.start, b.end));
+  const expenseData = buckets.map(b => sumInRange('expense', b.start, b.end));
   const hasData = incomeData.some(v=>v>0) || expenseData.some(v=>v>0);
 
   const trendCanvas = document.getElementById('trendChart');
@@ -1112,36 +1676,41 @@ function renderCharts(totalExpense){
     if(trendChart){ trendChart.destroy(); trendChart = null; }
   } else {
     trendCanvas.classList.remove('hidden'); trendEmpty.classList.add('hidden');
-    const labels = days.map(d => d.toLocaleDateString(undefined,{weekday:'short'}));
+    const labels = buckets.map(b => b.label);
     if(trendChart) trendChart.destroy();
     trendChart = new Chart(trendCanvas, {
       type:'bar',
       data:{
         labels,
         datasets:[
-          { label:'Income', data: incomeData, backgroundColor:'#a3d494', borderRadius:6, maxBarThickness:22 },
-          { label:'Expense', data: expenseData, backgroundColor:'#f3a7ba', borderRadius:6, maxBarThickness:22 },
+          { label:'Income', data: incomeData, backgroundColor:'#5fce56', borderRadius:6, maxBarThickness:22 },
+          { label:'Expense', data: expenseData, backgroundColor:'#f2668f', borderRadius:6, maxBarThickness:22 },
         ]
       },
       options:{
         plugins:{ legend:{ position:'bottom', labels:{ font:{family:'Nunito', size:11}, color:'#443725', boxWidth:12, padding:10 } } },
         scales:{
-          x:{ grid:{ display:false }, ticks:{ font:{family:'Nunito', size:11}, color:'#8d7c63' } },
-          y:{ grid:{ color:'#e8dcc6' }, ticks:{ font:{family:'Nunito', size:10}, color:'#8d7c63' } }
+          x:{ grid:{ display:false }, ticks:{ font:{family:'Nunito', size:10}, color:'#8a7457' } },
+          y:{ grid:{ color:'#e6d6ae' }, ticks:{ font:{family:'Nunito', size:10}, color:'#8a7457' } }
         }
       }
     });
   }
 }
-function sumForDay(date, type){
-  const key = toLocalISODate(date);
-  return transactions.filter(t => t.type===type && t.date===key).reduce((s,t)=>s+Number(t.amount),0);
-}
+
+document.getElementById('analytics-toggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  analyticsPeriod = btn.dataset.period;
+  [...document.querySelectorAll('#analytics-toggle button')].forEach(b => b.classList.toggle('active', b === btn));
+  renderCharts();
+});
 
 /* ============================================================
    INIT
 ============================================================ */
 function init(){
+  renderBoard();
   if(!user){
     document.getElementById('app').style.display = 'none';
     initOnboarding();
